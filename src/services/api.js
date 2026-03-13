@@ -1,12 +1,14 @@
 import axios from 'axios';
 
-const API = axios.create({
-  baseURL: import.meta.env.VITE_API_URL,
-});
+const baseURL = import.meta.env.VITE_API_URL;
+
+const API = axios.create({ baseURL });
 
 API.interceptors.request.use((req) => {
   const token = localStorage.getItem('accessToken');
-  if (token) req.headers.Authorization = `Bearer ${token}`;
+  if (token) {
+    req.headers.Authorization = `Bearer ${token}`;
+  }
   return req;
 });
 

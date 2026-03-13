@@ -3,48 +3,82 @@ import { useQuery } from '@tanstack/react-query';
 import API from '../services/api';
 import CarCard from '../components/cars/CarCard';
 import FilterSidebar from '../components/cars/FilterSidebar';
+import { FaChevronLeft, FaChevronRight } from 'react-icons/fa';
 
 export default function Cars() {
   const [filters, setFilters] = useState({});
   const [page, setPage] = useState(1);
+  const limit = 9;
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError } = useQuery({
     queryKey: ['cars', filters, page],
-    queryFn: () => API.get('/cars', { params: { ...filters, page } }).then(res => res.data)
+    queryFn: () => API.get('/cars', { params: { ...filters, page, limit } }).then(res => res.data)
   });
 
-  if (isLoading) return <div className="container mx-auto px-4 py-8">Loading...</div>;
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-96">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-2 border-b-2 border-primary-600"></div>
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="text-center py-20">
+        <p className="text-red-600 text-lg">Failed to load cars. Please try again later.</p>
+      </div>
+    );
+  }
+
+  const { cars, totalPages } = data;
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <div className="flex flex-col md:flex-row gap-8">
-        <aside className="md:w-1/4">
+    <div className="container-custom py-8">
+      <div className="flex flex-col lg:flex-row gap-8">
+        {/* Filters */}
+        <div className="lg:w-1/4">
           <FilterSidebar filters={filters} setFilters={setFilters} />
-        </aside>
-        <main className="md:w-3/4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data?.cars.map(car => <CarCard key={car.id} car={car} />)}
-          </div>
-          {data?.totalPages > 1 && (
-            <div className="flex justify-center mt-8 space-x-2">
-              <button
-                onClick={() => setPage(p => Math.max(1, p - 1))}
-                disabled={page === 1}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-              >
-                Previous
-              </button>
-              <span className="px-4 py-2">Page {page} of {data.totalPages}</span>
-              <button
-                onClick={() => setPage(p => Math.min(data.totalPages, p + 1))}
-                disabled={page === data.totalPages}
-                className="px-4 py-2 bg-gray-200 rounded disabled:opacity-50"
-              >
-                Next
-              </button>
-            </div>
+        </div>
+
+        {/* Car grid */}
+        <div className="lg:w-3/4">
+          <h1 className="text-3xl font-display font-bold mb-6">Available Cars</h1>
+          {cars?.length === 0 ? (
+            <p className="text-gray-600 text-center py-12">No cars match your criteria.</p>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+                {cars?.map((car) => (
+                  <CarCard key={car.id} car={car} />
+                ))}
+              </div>
+
+              {/* Pagination */}
+              {totalPages > 1 && (
+                <div className="flex justify-center items-center space-x-4 mt-12">
+                  <button
+                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    disabled={page === 1}
+                    className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    <FaChevronLeft />
+                  </button>
+                  <span className="text-gray-700">
+                    Page {page} of {totalPages}
+                  </span>
+                  <button
+                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    disabled={page === totalPages}
+                    className="p-2 rounded-lg border border-gray-300 disabled:opacity-50 hover:bg-gray-50"
+                  >
+                    <FaChevronRight />
+                  </button>
+                </div>
+              )}
+            </>
           )}
-        </main>
+        </div>
       </div>
     </div>
   );
